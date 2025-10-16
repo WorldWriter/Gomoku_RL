@@ -1,301 +1,244 @@
-# 五子棋强化学习项目 (Gomoku RL)
+# AlphaZero Gomoku
 
-一个简洁明了的五子棋强化学习项目，使用 DQN（Deep Q-Network）算法训练智能体学习五子棋策略。非常适合学习强化学习的核心概念！
+A reinforcement learning project implementing AlphaZero for Gomoku (Five in a Row). This project supports multiple board sizes (5×5, 10×10, 15×15) for progressive training and learning.
 
-## 项目特点
+## Features
 
-- **清晰的代码结构**：模块化设计，易于理解和扩展
-- **完整的强化学习流程**：环境、智能体、训练、评估一应俱全
-- **详细的注释**：代码中包含丰富的中文注释，便于学习
-- **可视化训练过程**：自动生成训练曲线图
-- **人机对弈**：训练完成后可与AI下棋
+- **AlphaZero Algorithm**: Complete implementation with MCTS and deep neural networks
+- **Multi-size Support**: Train on 5×5, 10×10, or 15×15 boards
+- **Cross-platform**: Works on both Mac (CPU) and Windows (CUDA GPU)
+- **Self-play Training**: Generates training data through self-play
+- **Human vs AI**: Play against trained models
+- **Model Evaluation**: Evaluate models against random baseline or compare models
 
-## 项目结构
+## Project Structure
 
 ```
 Gomoku_RL/
-├── README.md                 # 项目说明文档
-├── requirements.txt          # Python依赖
-├── gomoku/                   # 五子棋游戏核心模块
-│   ├── __init__.py
-│   ├── board.py             # 棋盘逻辑（规则、胜负判断）
-│   └── env.py               # Gymnasium环境封装
-├── agents/                   # 强化学习智能体
-│   ├── __init__.py
-│   ├── random_agent.py      # 随机智能体（基线）
-│   └── dqn_agent.py         # DQN深度Q网络智能体
-├── models/                   # 保存训练的模型
-├── train.py                  # 训练脚本（自我对弈）
-├── evaluate.py              # 评估脚本
-└── play.py                  # 人机对弈界面
+├── gomoku/              # Game logic
+│   ├── board.py         # Board implementation
+│   └── game.py          # Game wrapper
+├── alphazero/           # AlphaZero implementation
+│   ├── network.py       # ResNet policy-value network
+│   ├── mcts.py          # Monte Carlo Tree Search
+│   ├── self_play.py     # Self-play data generation
+│   └── trainer.py       # Training loop
+├── configs/             # Configuration files
+│   ├── config_5x5.py    # 5×5 board config
+│   ├── config_10x10.py  # 10×10 board config
+│   └── config_15x15.py  # 15×15 board config
+├── utils/               # Utility functions
+│   ├── device.py        # CUDA/CPU detection
+│   └── logger.py        # Logging utilities
+├── train.py             # Main training script
+├── play.py              # Human vs AI interface
+├── evaluate.py          # Model evaluation
+└── check_env.py         # Environment check
 ```
 
-## 快速开始
+## Installation
 
-### 1. 安装依赖
+### Prerequisites
 
+- Python 3.8+
+- PyTorch 2.0+
+- CUDA (optional, for GPU training on Windows)
+
+### Setup
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/Gomoku_RL.git
+cd Gomoku_RL
+```
+
+2. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. 训练智能体
+3. Check your environment:
+```bash
+python check_env.py
+```
 
-训练 DQN 智能体（默认对手为随机智能体）：
+## Usage
+
+### 1. Training
+
+Train a model on a specific board size:
 
 ```bash
-python train.py --episodes 1000 --board-size 15
+# Quick training on 5×5 (for testing)
+python train.py --board_size 5
+
+# Medium training on 10×10
+python train.py --board_size 10
+
+# Full training on 15×15 (requires GPU)
+python train.py --board_size 15
 ```
 
-**训练参数说明：**
-- `--episodes`: 训练轮数（默认 1000）
-- `--device`: 计算设备选择，可选值为 `auto`（默认，自动检测）、`cpu`（使用CPU）或 `cuda`（使用GPU）
+Additional options:
+```bash
+# Specify number of iterations
+python train.py --board_size 5 --iterations 50
 
-## GPU支持
+# Resume from checkpoint
+python train.py --board_size 10 --resume models/10x10/checkpoint_iter_50.pth
 
-### 检查CUDA支持
+# Force CPU training
+python train.py --board_size 5 --cpu
+```
 
-运行以下命令检查您的环境是否支持CUDA：
+### 2. Play Against AI
+
+Play against a trained model:
 
 ```bash
-python -c "import torch; print(f'CUDA可用: {torch.cuda.is_available()}')"
+python play.py --checkpoint models/5x5/checkpoint_latest.pth --board_size 5
+
+# Play as black (first)
+python play.py --checkpoint models/10x10/checkpoint_latest.pth --board_size 10 --human_first
+
+# Adjust AI strength (fewer simulations = weaker)
+python play.py --checkpoint models/15x15/checkpoint_latest.pth --board_size 15 --simulations 200
 ```
 
-### 安装CUDA版本的PyTorch
+### 3. Evaluate Models
 
-如果您的系统有NVIDIA GPU并支持CUDA，请安装CUDA版本的PyTorch以获得更快的训练速度：
+Evaluate model against random player:
 
 ```bash
-# 对于CUDA 11.8
-pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
-
-# 对于CUDA 12.1
-pip install torch==2.0.1+cu121 torchvision==0.15.2+cu121 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu121
+python evaluate.py --checkpoint models/5x5/checkpoint_latest.pth --board_size 5 --num_games 100
 ```
 
-> 注意：请根据您的CUDA版本选择正确的安装命令。您也可以访问 [PyTorch官网](https://pytorch.org/get-started/locally/) 获取适合您系统的最新安装命令。
-
-### 使用GPU训练
-
-安装好CUDA版本的PyTorch后，可以使用以下命令启用GPU训练：
+Compare two models:
 
 ```bash
-python train.py --device cuda
+python evaluate.py --checkpoint models/10x10/checkpoint_iter_100.pth \
+                   --checkpoint2 models/10x10/checkpoint_iter_50.pth \
+                   --baseline model --board_size 10 --num_games 50
 ```
-- `--board-size`: 棋盘大小（默认 15）
-- `--save-dir`: 模型保存目录（默认 models）
-- `--save-interval`: 模型保存间隔（默认 100 轮）
-- `--opponent`: 对手类型，`random`（随机）或 `self`（自我对弈）
 
-训练过程中会自动：
-- 每 100 轮打印训练进度
-- 每 100 轮保存模型检查点
-- 训练结束后生成训练曲线图 `training_curves.png`
+## Training Strategy
 
-### 3. 评估智能体
+### Phase 1: 5×5 Board (Quick Validation)
+- **Purpose**: Verify algorithm correctness
+- **Time**: A few hours on CPU
+- **Configuration**: 4 ResNet blocks, 200 MCTS simulations
+- **Expected**: Agent learns basic patterns
 
-评估训练好的模型性能：
+### Phase 2: 10×10 Board (Medium Scale)
+- **Purpose**: Test scalability
+- **Time**: 1-2 days on GPU
+- **Configuration**: 8 ResNet blocks, 400 MCTS simulations
+- **Expected**: More sophisticated strategies
 
+### Phase 3: 15×15 Board (Full Gomoku)
+- **Purpose**: Achieve strong AI performance
+- **Time**: Several days on GPU
+- **Configuration**: 10 ResNet blocks, 800 MCTS simulations
+- **Expected**: Near-expert level play
+
+## Configuration
+
+Each board size has its own configuration file in `configs/`:
+
+- `config_5x5.py`: Fast training, suitable for CPU
+- `config_10x10.py`: Medium training, GPU recommended
+- `config_15x15.py`: Full training, GPU required
+
+Key parameters you can adjust:
+- `NUM_SIMULATIONS`: MCTS simulations per move
+- `NUM_SELF_PLAY_GAMES`: Games per training iteration
+- `BATCH_SIZE`: Training batch size
+- `LEARNING_RATE`: Neural network learning rate
+- `NUM_RES_BLOCKS`: Number of residual blocks in network
+
+## Cross-Platform Training
+
+### Development on Mac (CPU)
 ```bash
-python evaluate.py --model-path models/dqn_agent_final.pth --num-games 100
+# Quick iterations on 5×5
+python train.py --board_size 5 --iterations 20
 ```
 
-**评估参数说明：**
-- `--model-path`: 模型文件路径（必需）
-- `--num-games`: 评估游戏数量（默认 100）
-- `--board-size`: 棋盘大小（默认 15）
-- `--opponent`: 对手类型（默认 random）
-- `--verbose`: 打印详细信息
-
-### 4. 人机对弈
-
-与训练好的AI对弈：
-
+### Training on Windows (GPU)
 ```bash
-python play.py --model-path models/dqn_agent_final.pth
+# Full training on larger boards
+python train.py --board_size 15 --iterations 500
 ```
 
-**对弈参数说明：**
-- `--model-path`: 模型文件路径（不指定则使用随机智能体）
-- `--board-size`: 棋盘大小（默认 15）
-- `--ai-first`: AI先手（默认人类先手）
+The code automatically detects CUDA availability and uses GPU when available.
 
-**如何下棋：**
-- 按照提示输入落子坐标，格式为：`行 列`（例如：`7 7`）
-- 坐标范围：0 到 14（对于 15×15 棋盘）
-- 黑子用 ● 表示，白子用 ○ 表示
+## Algorithm Details
 
-## 强化学习核心概念
+### AlphaZero Components
 
-本项目涵盖了以下强化学习核心概念：
+1. **Neural Network**: ResNet architecture with two heads
+   - Policy head: Outputs move probabilities
+   - Value head: Outputs position evaluation
 
-### 1. 马尔可夫决策过程（MDP）
-- **状态（State）**：15×15 的棋盘状态
-- **动作（Action）**：在棋盘某个位置落子
-- **奖励（Reward）**：
-  - 获胜：+1
-  - 失败：-1
-  - 平局：0
-  - 非法落子：-10
-  - 每步：-0.01（鼓励快速获胜）
+2. **MCTS**: Monte Carlo Tree Search with UCB selection
+   - Upper Confidence Bound formula: Q + c_puct × P × √N_parent / (1 + N)
+   - Dirichlet noise at root for exploration
 
-### 2. Q-Learning 与 DQN
-- **Q值**：在某个状态下采取某个动作的期望回报
-- **Q网络**：使用卷积神经网络（CNN）近似Q函数
-- **目标网络**：稳定训练过程，每隔一定步数更新
+3. **Self-play**: Generate training data
+   - Play games using current network + MCTS
+   - Store (state, policy, outcome) tuples
+   - Data augmentation with symmetries (rotations, flips)
 
-### 3. 经验回放（Experience Replay）
-- 存储过往经验：(state, action, reward, next_state, done)
-- 随机采样批量数据进行训练
-- 打破数据相关性，提高训练稳定性
+4. **Training**: Update neural network
+   - Policy loss: Cross-entropy between MCTS policy and network policy
+   - Value loss: MSE between game outcome and network value
+   - Combined loss optimized with Adam
 
-### 4. 探索-利用权衡（Exploration-Exploitation）
-- **ε-greedy策略**：
-  - 以 ε 概率随机探索
-  - 以 1-ε 概率选择最优动作
-  - ε 随训练逐渐衰减（从 1.0 到 0.01）
+## Tips for Training
 
-### 5. 自我对弈（Self-Play）
-- 智能体与自己或其他智能体对弈
-- 通过博弈学习策略
-- 持续提升棋力
+1. **Start Small**: Always test on 5×5 first to verify everything works
+2. **Monitor Loss**: Training loss should decrease steadily
+3. **Save Checkpoints**: Models are saved every N iterations
+4. **GPU Memory**: Adjust batch size if running out of memory
+5. **Training Time**: Be patient - good models take time to train
 
-## 代码详解
+## Troubleshooting
 
-### 五子棋环境 (gomoku/env.py)
+### CUDA Out of Memory
+- Reduce `BATCH_SIZE` in config
+- Reduce `NUM_SIMULATIONS` for MCTS
+- Use smaller network (fewer `NUM_RES_BLOCKS`)
 
-环境遵循 Gymnasium 标准接口：
+### Training Too Slow
+- Ensure CUDA is being used (check with `python check_env.py`)
+- Reduce `NUM_SELF_PLAY_GAMES`
+- Use smaller board size for testing
 
-```python
-env = GomokuEnv(board_size=15)
+### Model Not Learning
+- Increase `NUM_SIMULATIONS` for better MCTS policies
+- Check loss curves - they should decrease
+- Train for more iterations
+- Try different learning rates
 
-# 重置环境
-state, info = env.reset()
+## Future Improvements
 
-# 执行动作
-next_state, reward, done, truncated, info = env.step(action)
-```
+- [ ] Parallel self-play with multiprocessing
+- [ ] Learning rate scheduling
+- [ ] Arena evaluation (new model vs old model)
+- [ ] Web interface for playing
+- [ ] Pre-trained models for download
+- [ ] TensorBoard integration for monitoring
 
-### DQN智能体 (agents/dqn_agent.py)
+## References
 
-核心组件：
+- [AlphaGo Zero Paper](https://www.nature.com/articles/nature24270)
+- [AlphaZero Paper](https://arxiv.org/abs/1712.01815)
+- [MCTS Survey](https://ieeexplore.ieee.org/document/6145622)
 
-1. **Q网络**：3层卷积 + 2层全连接
-2. **经验回放缓冲区**：容量 10000
-3. **训练步骤**：
-   - 从缓冲区采样
-   - 计算目标Q值
-   - 更新Q网络参数
-   - 定期更新目标网络
+## License
 
-### 训练流程 (train.py)
+MIT License - feel free to use this project for learning and experimentation.
 
-自我对弈训练循环：
+## Acknowledgments
 
-```python
-for episode in range(episodes):
-    # 1. 自我对弈一局
-    episode_data, winner = self_play_episode(agent1, agent2, env)
-
-    # 2. 存储经验
-    for state, action, reward, next_state, done in episode_data:
-        agent.store_transition(state, action, reward, next_state, done)
-
-    # 3. 训练网络
-    loss = agent.train_step()
-
-    # 4. 更新探索率
-    agent.update_epsilon()
-```
-
-## 训练建议
-
-1. **初期训练（前 500 轮）**：
-   - 对手使用随机智能体
-   - 智能体快速学习基本策略
-
-2. **进阶训练（500-2000 轮）**：
-   - 增加训练轮数
-   - 可以尝试自我对弈（`--opponent self`）
-
-3. **参数调优**：
-   - 学习率：0.001（默认）
-   - 折扣因子 γ：0.99（默认）
-   - 批量大小：64（默认）
-   - 探索率衰减：0.995（默认）
-
-4. **训练技巧**：
-   - 使用 GPU 加速训练（自动检测）
-   - 观察训练曲线判断收敛情况
-   - 定期评估模型性能
-
-## 扩展方向
-
-想要进一步提升项目？可以尝试：
-
-1. **改进网络结构**：
-   - 使用残差网络（ResNet）
-   - 增加网络深度
-
-2. **高级算法**：
-   - Double DQN
-   - Dueling DQN
-   - Rainbow DQN
-   - AlphaGo Zero 风格的 MCTS + 神经网络
-
-3. **增强训练**：
-   - 优先经验回放（Prioritized Experience Replay）
-   - 课程学习（Curriculum Learning）
-   - 对抗训练
-
-4. **可视化改进**：
-   - 图形界面（pygame/tkinter）
-   - 实时训练监控（tensorboard）
-
-## 学习资源
-
-- **强化学习书籍**：
-  - 《Reinforcement Learning: An Introduction》 - Sutton & Barto
-  - 《深度强化学习》 - 王树森等
-
-- **在线课程**：
-  - CS285 (Berkeley)
-  - DeepMind RL Course
-
-- **论文**：
-  - DQN: "Playing Atari with Deep Reinforcement Learning" (Mnih et al., 2013)
-  - AlphaGo: "Mastering the game of Go with deep neural networks" (Silver et al., 2016)
-
-## 常见问题
-
-**Q: 训练多久才能打败随机智能体？**
-A: 通常 500-1000 轮训练后，智能体就能稳定战胜随机智能体（胜率 > 80%）。
-
-**Q: 为什么训练很慢？**
-A: 15×15 棋盘的动作空间较大。可以尝试：
-- 减小棋盘尺寸（如 9×9）
-- 使用 GPU 训练
-- 减少网络层数
-
-**Q: 如何判断模型是否训练好？**
-A: 观察指标：
-- 对随机智能体胜率 > 80%
-- 训练曲线趋于稳定
-- 探索率降至较低水平
-
-**Q: 可以用在其他棋类游戏吗？**
-A: 可以！只需修改棋盘规则和胜负判断逻辑，框架可复用于：
-- 井字棋（Tic-Tac-Toe）
-- 四子棋（Connect Four）
-- 围棋（Go）等
-
-## 许可证
-
-MIT License
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-## 致谢
-
-本项目旨在帮助初学者理解强化学习在棋类游戏中的应用。祝学习愉快！
+This project is a learning implementation of the AlphaZero algorithm for educational purposes.

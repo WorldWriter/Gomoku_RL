@@ -1,5 +1,16 @@
+# AlphaZero Gomoku Requirements
+# Python 3.8+ required
+
+# Core dependencies
 torch>=2.0.0
-numpy>=1.24.0
-gymnasium>=0.29.0
-matplotlib>=3.7.0
-tqdm>=4.65.0
+numpy>=1.21.0
+
+# Progress bar
+tqdm>=4.62.0
+
+# Optional: for plotting training curves
+matplotlib>=3.4.0
+
+# Optional: for Jupyter notebooks
+jupyter>=1.0.0
+ipython>=7.30.0

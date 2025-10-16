@@ -1,8 +1,8 @@
 """
-五子棋游戏核心模块
+Gomoku game implementation
 """
 
 from .board import GomokuBoard
-from .env import GomokuEnv
+from .game import GomokuGame
 
-__all__ = ["GomokuBoard", "GomokuEnv"]
+__all__ = ['GomokuBoard', 'GomokuGame']

@@ -1,189 +1,253 @@
 """
-人机对弈界面：与训练好的 DQN 智能体下棋
+Human vs AI gameplay interface
+Play Gomoku against trained AlphaZero agent
 """
 
-import sys
 import argparse
-
-# 添加E盘PyTorch安装路径
-sys.path.insert(0, 'E:\\pytorch_install\\Lib\\site-packages')
-
 import torch
-from gomoku import GomokuBoard
-from agents import DQNAgent, RandomAgent
+import numpy as np
+from pathlib import Path
+
+from gomoku import GomokuGame
+from alphazero import AlphaZeroNet, MCTS
+from utils import get_device
 
 
-def get_human_move(board):
+class HumanPlayer:
+    """Human player interface"""
+
+    def __init__(self, game):
+        self.game = game
+
+    def get_action(self, game):
+        """
+        Get action from human input
+
+        Args:
+            game: Current game state
+
+        Returns:
+            int: Action index
+        """
+        board_size = game.get_board_size()
+
+        while True:
+            try:
+                move_input = input("\nYour move (row col, e.g., '7 7'): ").strip()
+                row, col = map(int, move_input.split())
+
+                if not (0 <= row < board_size and 0 <= col < board_size):
+                    print(f"Invalid move: position out of bounds (0-{board_size-1})")
+                    continue
+
+                action = row * board_size + col
+
+                if game.get_valid_moves()[action] == 0:
+                    print("Invalid move: position already occupied")
+                    continue
+
+                return action
+
+            except ValueError:
+                print("Invalid input format. Please enter: row col (e.g., '7 7')")
+            except KeyboardInterrupt:
+                print("\nGame interrupted by user")
+                exit(0)
+
+
+class AIPlayer:
+    """AI player using AlphaZero"""
+
+    def __init__(self, network, game, args, name="AI"):
+        """
+        Args:
+            network: Neural network
+            game: Game instance
+            args: MCTS configuration
+            name: Player name
+        """
+        self.network = network
+        self.game = game
+        self.args = args
+        self.name = name
+        self.mcts = MCTS(network, game, args)
+
+    def get_action(self, game):
+        """
+        Get action from AI
+
+        Args:
+            game: Current game state
+
+        Returns:
+            int: Action index
+        """
+        print(f"\n{self.name} is thinking...")
+
+        action_probs = self.mcts.get_action_probs(game, temperature=0)
+        action = np.argmax(action_probs)
+
+        # Display top moves
+        top_actions = np.argsort(action_probs)[-3:][::-1]
+        print(f"{self.name}'s top moves:")
+        for i, a in enumerate(top_actions, 1):
+            row = a // game.get_board_size()
+            col = a % game.get_board_size()
+            prob = action_probs[a]
+            print(f"  {i}. ({row}, {col}): {prob:.3f}")
+
+        return action
+
+
+def play_game(human_player, ai_player, game, human_first=True):
     """
-    获取人类玩家的落子位置
+    Play one game between human and AI
 
     Args:
-        board: 棋盘对象
+        human_player: Human player instance
+        ai_player: AI player instance
+        game: Game instance
+        human_first: Whether human plays first (as black)
 
     Returns:
-        (row, col) 坐标
+        int: Game result (1: black wins, -1: white wins, 0: draw)
     """
-    while True:
-        try:
-            move = input("\n请输入落子位置 (格式: 行 列，例如: 7 7): ")
-            parts = move.strip().split()
+    game.reset()
 
-            if len(parts) != 2:
-                print("输入格式错误！请输入两个数字，用空格分隔。")
-                continue
+    if human_first:
+        current_player = human_player
+        other_player = ai_player
+        print("\nYou are playing as BLACK (X)")
+        print("AI is playing as WHITE (O)")
+    else:
+        current_player = ai_player
+        other_player = human_player
+        print("\nAI is playing as BLACK (X)")
+        print("You are playing as WHITE (O)")
 
-            row, col = int(parts[0]), int(parts[1])
+    print(f"\nBoard size: {game.get_board_size()}x{game.get_board_size()}")
+    print("Enter moves as 'row col' (e.g., '7 7')")
+    print("\n" + "="*60)
 
-            if not (0 <= row < board.size and 0 <= col < board.size):
-                print(f"位置超出范围！请输入 0-{board.size-1} 之间的数字。")
-                continue
-
-            if board.board[row, col] != 0:
-                print("该位置已有棋子！请选择其他位置。")
-                continue
-
-            return row, col
-
-        except ValueError:
-            print("输入错误！请输入数字。")
-        except KeyboardInterrupt:
-            print("\n游戏已退出。")
-            exit(0)
-
-
-def play_game(agent, board_size=15, human_first=True):
-    """
-    人机对弈
-
-    Args:
-        agent: AI智能体
-        board_size: 棋盘大小
-        human_first: 人类是否先手
-    """
-    board = GomokuBoard(board_size)
-
-    print("\n" + "=" * 50)
-    print("五子棋人机对弈")
-    print("=" * 50)
-    print(f"棋盘大小: {board_size}x{board_size}")
-    print(f"你执: {'黑子 (●)' if human_first else '白子 (○)'}")
-    print(f"AI执: {'白子 (○)' if human_first else '黑子 (●)'}")
-    print("=" * 50)
-
-    # 渲染初始棋盘
-    board.render()
-
-    human_player = 1 if human_first else -1
-    ai_player = -human_player
+    move_count = 0
 
     while True:
-        current_player = board.current_player
+        # Display board
+        print(f"\nMove {move_count + 1}")
+        game.display()
 
-        if current_player == human_player:
-            # 人类玩家回合
-            print(f"\n你的回合 ({'黑子 ●' if human_player == 1 else '白子 ○'})")
-            row, col = get_human_move(board)
+        # Get action
+        action = current_player.get_action(game)
 
-        else:
-            # AI回合
-            print(f"\nAI思考中 ({'黑子 ●' if ai_player == 1 else '白子 ○'})...")
+        # Execute action
+        row = action // game.get_board_size()
+        col = action % game.get_board_size()
 
-            # 获取合法动作
-            valid_moves = board.get_valid_moves()
-            valid_actions = [r * board_size + c for r, c in valid_moves]
+        player_name = "You" if current_player == human_player else current_player.name
+        print(f"{player_name} played: ({row}, {col})")
 
-            # AI选择动作
-            action = agent.get_action(board.get_state(), valid_actions, training=False)
+        game.get_next_state(action)
+        move_count += 1
 
-            if action is None:
-                print("AI无法落子！")
-                break
+        # Update MCTS tree for AI
+        if isinstance(other_player, AIPlayer):
+            other_player.mcts.update_root(action)
 
-            row = action // board_size
-            col = action % board_size
+        # Check if game ended
+        game_result = game.get_game_ended()
+        if game_result != 0:
+            print("\n" + "="*60)
+            game.display()
+            print("\nGame Over!")
 
-            print(f"AI 落子: ({row}, {col})")
-
-        # 执行落子
-        if not board.make_move(row, col):
-            print("非法落子！")
-            continue
-
-        # 渲染棋盘
-        board.render()
-
-        # 检查游戏是否结束
-        game_over, winner = board.is_game_over()
-
-        if game_over:
-            print("\n" + "=" * 50)
-            if winner == human_player:
-                print("🎉 恭喜你获胜！")
-            elif winner == ai_player:
-                print("😔 AI 获胜！")
+            if abs(game_result) < 0.001:  # Draw
+                print("Result: Draw")
+                return 0
             else:
-                print("🤝 平局！")
-            print("=" * 50)
-            break
+                # Determine winner
+                if human_first:
+                    # If human is black: result > 0 means black won (human won)
+                    winner = "You" if game_result > 0 else ai_player.name
+                else:
+                    # If human is white: result > 0 means black won (AI won)
+                    winner = ai_player.name if game_result > 0 else "You"
+
+                print(f"Winner: {winner}!")
+                return game_result
+
+        # Switch players
+        current_player, other_player = other_player, current_player
 
 
 def main():
-    parser = argparse.ArgumentParser(description="与训练好的五子棋 DQN 智能体对弈")
-    parser.add_argument(
-        "--model-path",
-        type=str,
-        default=None,
-        help="模型文件路径（如果不指定则使用随机智能体）",
-    )
-    parser.add_argument(
-        "--board-size", type=int, default=15, help="棋盘大小 (默认: 15)"
-    )
-    parser.add_argument(
-        "--ai-first", action="store_true", help="AI先手（默认人类先手）"
-    )
-    parser.add_argument(
-        "--device",
-        type=str,
-        default="auto",
-        choices=["auto", "cpu", "cuda"],
-        help="计算设备 (默认: auto)"
-    )
+    parser = argparse.ArgumentParser(description='Play Gomoku against AlphaZero')
+    parser.add_argument('--checkpoint', type=str, required=True,
+                        help='Path to model checkpoint')
+    parser.add_argument('--board_size', type=int, default=15, choices=[5, 10, 15],
+                        help='Board size (5, 10, or 15)')
+    parser.add_argument('--n_in_row', type=int, default=5,
+                        help='Number in a row to win')
+    parser.add_argument('--simulations', type=int, default=400,
+                        help='Number of MCTS simulations')
+    parser.add_argument('--human_first', action='store_true',
+                        help='Human plays first (as black)')
+    parser.add_argument('--cpu', action='store_true',
+                        help='Force CPU (ignore CUDA)')
 
     args = parser.parse_args()
-    
-    # 确定设备
-    import torch
-    if args.device == "auto":
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Get device
+    device = get_device(prefer_cuda=not args.cpu)
+
+    # Create game
+    print(f"\nInitializing {args.board_size}x{args.board_size} Gomoku...")
+    game = GomokuGame(board_size=args.board_size, n_in_row=args.n_in_row)
+
+    # Load network
+    print(f"Loading model from {args.checkpoint}...")
+    checkpoint = torch.load(args.checkpoint, map_location=device)
+
+    # Infer network architecture from checkpoint if available
+    if 'args' in checkpoint:
+        config = checkpoint['args']
+        network = AlphaZeroNet(
+            board_size=args.board_size,
+            num_channels=config.get('num_channels', 128),
+            num_res_blocks=config.get('num_res_blocks', 10)
+        )
     else:
-        device = torch.device(args.device)
-    
-    print(f"使用设备: {device}")
+        # Use default architecture
+        network = AlphaZeroNet(board_size=args.board_size)
 
-    # 创建智能体
-    if args.model_path:
-        agent = DQNAgent(board_size=args.board_size, device=device)
-        try:
-            agent.load(args.model_path)
-            print(f"模型已加载: {args.model_path}")
-        except Exception as e:
-            print(f"加载模型失败: {e}")
-            print("使用随机智能体代替。")
-            agent = RandomAgent(board_size=args.board_size)
-    else:
-        print("未指定模型路径，使用随机智能体。")
-        agent = RandomAgent(board_size=args.board_size)
+    network.load_state_dict(checkpoint['model_state_dict'])
+    network = network.to(device)
+    network.eval()
 
-    # 开始游戏
-    while True:
-        play_game(agent, board_size=args.board_size, human_first=not args.ai_first)
+    print(f"Model loaded successfully!")
+    print(f"Training iteration: {checkpoint.get('iteration', 'unknown')}")
 
-        # 询问是否再来一局
-        play_again = input("\n是否再来一局？(y/n): ")
-        if play_again.lower() != "y":
-            print("感谢游戏！再见！")
-            break
+    # Create players
+    human_player = HumanPlayer(game)
+
+    mcts_args = {
+        'num_simulations': args.simulations,
+        'c_puct': 1.0,
+    }
+    ai_player = AIPlayer(network, game, mcts_args, name="AlphaZero")
+
+    # Play game
+    print("\n" + "="*60)
+    print("Starting game...")
+    print("="*60)
+
+    try:
+        play_game(human_player, ai_player, game, human_first=args.human_first)
+
+    except KeyboardInterrupt:
+        print("\n\nGame interrupted by user")
+
+    print("\nThank you for playing!")
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

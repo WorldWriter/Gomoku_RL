@@ -1,152 +1,255 @@
 """
-五子棋棋盘实现
-包含棋盘状态管理、落子、胜负判断等核心逻辑
+Gomoku Board implementation
+Supports configurable board sizes: 5x5, 10x10, 15x15
 """
 
 import numpy as np
 
 
 class GomokuBoard:
-    """五子棋棋盘类"""
+    """
+    Gomoku board with configurable size
+    Supports n-in-a-row win condition (default: 5)
+    """
 
-    def __init__(self, size=15):
+    def __init__(self, size=15, n_in_row=5):
         """
-        初始化棋盘
+        Initialize board
 
         Args:
-            size: 棋盘大小，默认15x15
+            size: Board size (5, 10, or 15)
+            n_in_row: Number of consecutive stones needed to win (default: 5)
         """
         self.size = size
-        self.board = np.zeros((size, size), dtype=np.int8)  # 0: 空, 1: 黑子, -1: 白子
-        self.current_player = 1  # 1: 黑子先手, -1: 白子
-        self.last_move = None  # 记录最后一步落子位置
+        self.n_in_row = min(n_in_row, size)  # Ensure n_in_row doesn't exceed board size
+        self.board = np.zeros((size, size), dtype=np.int8)  # 0: empty, 1: black, -1: white
+        self.current_player = 1  # 1: black (first), -1: white
+        self.last_move = None
+        self.move_history = []
 
     def reset(self):
-        """重置棋盘"""
+        """Reset board to initial state"""
         self.board = np.zeros((self.size, self.size), dtype=np.int8)
         self.current_player = 1
         self.last_move = None
+        self.move_history = []
 
     def get_valid_moves(self):
         """
-        获取所有合法落子位置
+        Get all valid moves (empty positions)
 
         Returns:
-            合法位置的列表 [(row, col), ...]
+            List of (row, col) tuples
         """
         return list(zip(*np.where(self.board == 0)))
 
-    def make_move(self, row, col):
+    def get_valid_moves_mask(self):
         """
-        在指定位置落子
-
-        Args:
-            row: 行索引
-            col: 列索引
+        Get valid moves as a binary mask
 
         Returns:
-            是否落子成功
+            numpy.ndarray: Binary mask (1 for valid, 0 for invalid)
+        """
+        return (self.board == 0).astype(np.float32)
+
+    def is_valid_move(self, row, col):
+        """
+        Check if a move is valid
+
+        Args:
+            row: Row index
+            col: Column index
+
+        Returns:
+            bool: True if move is valid
         """
         if not (0 <= row < self.size and 0 <= col < self.size):
             return False
+        return self.board[row, col] == 0
 
-        if self.board[row, col] != 0:
+    def make_move(self, row, col):
+        """
+        Make a move at the specified position
+
+        Args:
+            row: Row index
+            col: Column index
+
+        Returns:
+            bool: True if move was successful
+        """
+        if not self.is_valid_move(row, col):
             return False
 
         self.board[row, col] = self.current_player
         self.last_move = (row, col)
-        self.current_player = -self.current_player  # 切换玩家
+        self.move_history.append((row, col, self.current_player))
+        self.current_player = -self.current_player
+
         return True
 
-    def check_winner(self):
+    def undo_move(self):
         """
-        检查是否有玩家获胜
+        Undo the last move
 
         Returns:
-            1: 黑子获胜
-            -1: 白子获胜
-            0: 游戏继续
+            bool: True if undo was successful
         """
-        if self.last_move is None:
-            return 0
+        if not self.move_history:
+            return False
 
-        row, col = self.last_move
+        row, col, player = self.move_history.pop()
+        self.board[row, col] = 0
+        self.current_player = player
+
+        if self.move_history:
+            self.last_move = (self.move_history[-1][0], self.move_history[-1][1])
+        else:
+            self.last_move = None
+
+        return True
+
+    def check_win(self, row, col):
+        """
+        Check if the last move at (row, col) resulted in a win
+
+        Args:
+            row: Row index of last move
+            col: Column index of last move
+
+        Returns:
+            bool: True if the move resulted in a win
+        """
         player = self.board[row, col]
+        if player == 0:
+            return False
 
-        # 检查四个方向：横、竖、主对角线、副对角线
+        # Check four directions: horizontal, vertical, diagonal, anti-diagonal
         directions = [
-            (0, 1),   # 横向
-            (1, 0),   # 纵向
-            (1, 1),   # 主对角线
-            (1, -1)   # 副对角线
+            [(0, 1), (0, -1)],   # horizontal
+            [(1, 0), (-1, 0)],   # vertical
+            [(1, 1), (-1, -1)],  # diagonal
+            [(1, -1), (-1, 1)]   # anti-diagonal
         ]
 
-        for dr, dc in directions:
-            count = 1  # 包含当前落子
+        for direction_pair in directions:
+            count = 1  # Count the stone at (row, col)
 
-            # 正方向检查
-            r, c = row + dr, col + dc
-            while 0 <= r < self.size and 0 <= c < self.size and self.board[r, c] == player:
-                count += 1
-                r += dr
-                c += dc
+            # Check both directions
+            for dr, dc in direction_pair:
+                r, c = row + dr, col + dc
+                while 0 <= r < self.size and 0 <= c < self.size and self.board[r, c] == player:
+                    count += 1
+                    r += dr
+                    c += dc
 
-            # 反方向检查
-            r, c = row - dr, col - dc
-            while 0 <= r < self.size and 0 <= c < self.size and self.board[r, c] == player:
-                count += 1
-                r -= dr
-                c -= dc
+            if count >= self.n_in_row:
+                return True
 
-            if count >= 5:
-                return player
-
-        return 0
+        return False
 
     def is_full(self):
-        """检查棋盘是否已满"""
-        return not np.any(self.board == 0)
-
-    def is_game_over(self):
         """
-        检查游戏是否结束
+        Check if the board is full
 
         Returns:
-            (游戏是否结束, 获胜者)
+            bool: True if board is full
         """
-        winner = self.check_winner()
-        if winner != 0:
+        return np.all(self.board != 0)
+
+    def get_game_status(self):
+        """
+        Get current game status
+
+        Returns:
+            tuple: (game_over: bool, winner: int)
+                   winner: 1 (black wins), -1 (white wins), 0 (draw/ongoing)
+        """
+        if self.last_move is None:
+            return False, 0
+
+        # Check if last move resulted in a win
+        row, col = self.last_move
+        if self.check_win(row, col):
+            winner = self.board[row, col]
             return True, winner
 
+        # Check for draw (board full)
         if self.is_full():
-            return True, 0  # 平局
+            return True, 0
 
         return False, 0
 
-    def get_state(self):
+    def get_board_state(self):
         """
-        获取当前棋盘状态
+        Get the current board state
 
         Returns:
-            棋盘状态的副本
+            numpy.ndarray: Copy of the board state
         """
         return self.board.copy()
 
-    def render(self):
-        """打印棋盘到控制台"""
-        print("\n  ", end="")
-        for i in range(self.size):
-            print(f"{i:2}", end=" ")
-        print()
+    def get_canonical_board(self):
+        """
+        Get board from current player's perspective
+        Current player's stones are always represented as 1
+
+        Returns:
+            numpy.ndarray: Canonical board state
+        """
+        return self.board * self.current_player
+
+    def get_feature_planes(self):
+        """
+        Get feature planes for neural network input
+        Returns 3 channels: current player stones, opponent stones, turn indicator
+
+        Returns:
+            numpy.ndarray: Shape (3, size, size)
+        """
+        current_player_plane = (self.board == self.current_player).astype(np.float32)
+        opponent_plane = (self.board == -self.current_player).astype(np.float32)
+        turn_plane = np.full((self.size, self.size),
+                            (self.current_player + 1) / 2, dtype=np.float32)
+
+        return np.stack([current_player_plane, opponent_plane, turn_plane], axis=0)
+
+    def display(self):
+        """Display the board in a readable format"""
+        symbols = {0: '.', 1: 'X', -1: 'O'}
+
+        # Print column numbers
+        print('   ' + ' '.join(f'{i:2d}' for i in range(self.size)))
 
         for i in range(self.size):
-            print(f"{i:2}", end=" ")
+            # Print row number and board content
+            row_str = f'{i:2d} '
             for j in range(self.size):
-                if self.board[i, j] == 1:
-                    print(" ●", end=" ")  # 黑子
-                elif self.board[i, j] == -1:
-                    print(" ○", end=" ")  # 白子
+                symbol = symbols[self.board[i, j]]
+                # Highlight last move
+                if self.last_move == (i, j):
+                    row_str += f'[{symbol}]'
                 else:
-                    print(" ·", end=" ")  # 空位
-            print()
-        print()
+                    row_str += f' {symbol} '
+            print(row_str)
+
+    def copy(self):
+        """
+        Create a deep copy of the board
+
+        Returns:
+            GomokuBoard: A copy of the current board
+        """
+        new_board = GomokuBoard(self.size, self.n_in_row)
+        new_board.board = self.board.copy()
+        new_board.current_player = self.current_player
+        new_board.last_move = self.last_move
+        new_board.move_history = self.move_history.copy()
+        return new_board
+
+    def __str__(self):
+        """String representation of the board"""
+        return f"GomokuBoard(size={self.size}, n_in_row={self.n_in_row}, moves={len(self.move_history)})"
+
+    def __repr__(self):
+        return self.__str__()

@@ -20,10 +20,26 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
+# PyTorch
+*.pth
+*.pt
+
+# Logs
+logs/
+*.log
+
+# Models (uncomment if you want to exclude trained models)
+# models/
+# But keep the directory structure
+!models/.gitkeep
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Virtual environment
 venv/
-ENV/
 env/
+ENV/
 
 # IDE
 .vscode/
@@ -32,24 +48,13 @@ env/
 *.swo
 *~
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Model files (trained models can be large)
-# *.h5
-# *.pth
-# *.pkl
-# *.ckpt
-# models/*.pth
-# models/*.h5
-
-# Logs
-*.log
-logs/
-
 # OS
 .DS_Store
 Thumbs.db
 
-# Claude Code
-.claude/
+# Training artifacts
+training_result/
+
+# Temporary files
+*.tmp
+temp/
