@@ -48,6 +48,39 @@ python train.py --episodes 1000 --board-size 15
 
 **训练参数说明：**
 - `--episodes`: 训练轮数（默认 1000）
+- `--device`: 计算设备选择，可选值为 `auto`（默认，自动检测）、`cpu`（使用CPU）或 `cuda`（使用GPU）
+
+## GPU支持
+
+### 检查CUDA支持
+
+运行以下命令检查您的环境是否支持CUDA：
+
+```bash
+python -c "import torch; print(f'CUDA可用: {torch.cuda.is_available()}')"
+```
+
+### 安装CUDA版本的PyTorch
+
+如果您的系统有NVIDIA GPU并支持CUDA，请安装CUDA版本的PyTorch以获得更快的训练速度：
+
+```bash
+# 对于CUDA 11.8
+pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
+
+# 对于CUDA 12.1
+pip install torch==2.0.1+cu121 torchvision==0.15.2+cu121 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu121
+```
+
+> 注意：请根据您的CUDA版本选择正确的安装命令。您也可以访问 [PyTorch官网](https://pytorch.org/get-started/locally/) 获取适合您系统的最新安装命令。
+
+### 使用GPU训练
+
+安装好CUDA版本的PyTorch后，可以使用以下命令启用GPU训练：
+
+```bash
+python train.py --device cuda
+```
 - `--board-size`: 棋盘大小（默认 15）
 - `--save-dir`: 模型保存目录（默认 models）
 - `--save-interval`: 模型保存间隔（默认 100 轮）

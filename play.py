@@ -2,7 +2,13 @@
 人机对弈界面：与训练好的 DQN 智能体下棋
 """
 
+import sys
 import argparse
+
+# 添加E盘PyTorch安装路径
+sys.path.insert(0, 'E:\\pytorch_install\\Lib\\site-packages')
+
+import torch
 from gomoku import GomokuBoard
 from agents import DQNAgent, RandomAgent
 
@@ -135,12 +141,28 @@ def main():
     parser.add_argument(
         "--ai-first", action="store_true", help="AI先手（默认人类先手）"
     )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="auto",
+        choices=["auto", "cpu", "cuda"],
+        help="计算设备 (默认: auto)"
+    )
 
     args = parser.parse_args()
+    
+    # 确定设备
+    import torch
+    if args.device == "auto":
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    else:
+        device = torch.device(args.device)
+    
+    print(f"使用设备: {device}")
 
     # 创建智能体
     if args.model_path:
-        agent = DQNAgent(board_size=args.board_size)
+        agent = DQNAgent(board_size=args.board_size, device=device)
         try:
             agent.load(args.model_path)
             print(f"模型已加载: {args.model_path}")

@@ -3,10 +3,14 @@
 """
 
 import os
+import sys
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+
+# 添加E盘PyTorch安装路径
+sys.path.insert(0, 'E:\\pytorch_install\\Lib\\site-packages')
 
 from gomoku import GomokuEnv
 from agents import DQNAgent, RandomAgent
@@ -69,6 +73,7 @@ def train(
     save_dir="models",
     save_interval=100,
     opponent_type="random",
+    device=None,
 ):
     """
     训练DQN智能体
@@ -85,7 +90,7 @@ def train(
 
     # 创建环境和智能体
     env = GomokuEnv(board_size=board_size)
-    agent = DQNAgent(board_size=board_size)
+    agent = DQNAgent(board_size=board_size, device=device)
 
     # 创建对手
     if opponent_type == "random":
@@ -238,8 +243,29 @@ if __name__ == "__main__":
         choices=["random", "self"],
         help="对手类型 (默认: random)",
     )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="auto",
+        choices=["auto", "cpu", "cuda"],
+        help="计算设备 (默认: auto)"
+    )
 
     args = parser.parse_args()
+    
+    # 确定设备
+    import torch
+    if args.device == "auto":
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    else:
+        device = torch.device(args.device)
+
+    print(f"使用设备: {device}")
+    if device.type == "cpu" and torch.cuda.is_available():
+        print("警告: CUDA 可用但选择了 CPU 设备。使用 --device=cuda 启用 GPU 加速。")
+    elif device.type == "cuda" and not torch.cuda.is_available():
+        print("错误: CUDA 不可用，将使用 CPU 设备。")
+        device = torch.device("cpu")
 
     train(
         episodes=args.episodes,
@@ -247,4 +273,5 @@ if __name__ == "__main__":
         save_dir=args.save_dir,
         save_interval=args.save_interval,
         opponent_type=args.opponent,
+        device=device  # 传递设备参数
     )

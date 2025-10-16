@@ -2,8 +2,13 @@
 评估脚本：测试训练好的 DQN 智能体
 """
 
+import sys
 import argparse
 from tqdm import tqdm
+
+# 添加E盘PyTorch安装路径
+sys.path.insert(0, 'E:\\pytorch_install\\Lib\\site-packages')
+import torch
 
 from gomoku import GomokuEnv
 from agents import DQNAgent, RandomAgent
@@ -97,7 +102,14 @@ def main():
         "--board-size", type=int, default=15, help="棋盘大小 (默认: 15)"
     )
     parser.add_argument(
-        "--num-games", type=int, default=100, help="评估游戏数量 (默认: 100)"
+        "--num-games", type=int, default=100, help="评估游戏数量 (默认: 100)",
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="auto",
+        choices=["auto", "cpu", "cuda"],
+        help="计算设备 (默认: auto)"
     )
     parser.add_argument(
         "--opponent",
@@ -106,15 +118,23 @@ def main():
         choices=["random"],
         help="对手类型 (默认: random)",
     )
-    parser.add_argument("--verbose", action="store_true", help="打印详细信息")
 
     args = parser.parse_args()
+    
+    # 确定设备
+    import torch
+    if args.device == "auto":
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    else:
+        device = torch.device(args.device)
+    
+    print(f"使用设备: {device}")
 
     # 创建环境
     env = GomokuEnv(board_size=args.board_size)
 
     # 加载智能体
-    agent = DQNAgent(board_size=args.board_size)
+    agent = DQNAgent(board_size=args.board_size, device=device)
     try:
         agent.load(args.model_path)
         print(f"模型已加载: {args.model_path}")
@@ -132,7 +152,7 @@ def main():
 
     # 评估
     results = evaluate_agent(
-        agent, opponent, env, num_games=args.num_games, verbose=args.verbose
+        agent, opponent, env, num_games=args.num_games, verbose=True
     )
 
     # 打印结果
