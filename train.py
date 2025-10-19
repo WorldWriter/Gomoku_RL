@@ -88,7 +88,7 @@ def main():
 
     # Create trainer
     logger.info("Initializing trainer...")
-    trainer = Trainer(network, game, config, device)
+    trainer = Trainer(network, game, config, device, log_dir=args.log_dir)
 
     # Resume from checkpoint if specified
     start_iteration = 0

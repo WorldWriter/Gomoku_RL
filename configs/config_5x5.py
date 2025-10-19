@@ -32,7 +32,7 @@ USE_AUGMENTATION = True  # Use symmetry augmentation
 
 # Checkpoint settings
 CHECKPOINT_DIR = 'models/5x5'
-SAVE_INTERVAL = 10  # Save every N iterations
+SAVE_INTERVAL = 1000  # Save every N iterations
 
 
 def get_config():

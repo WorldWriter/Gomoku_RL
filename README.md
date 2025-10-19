@@ -2,6 +2,20 @@
 
 A reinforcement learning project implementing AlphaZero for Gomoku (Five in a Row). This project supports multiple board sizes (5×5, 10×10, 15×15) for progressive training and learning.
 
+## 📚 Documentation
+
+**新手？** 我们为零基础学习者准备了完整的中文技术文档！
+
+👉 **[查看完整新手教程](./docs/)** - 从零开始学习AlphaZero
+
+文档包含：
+- 🎓 基础概念（像教小朋友一样讲解）
+- 📁 项目结构详解
+- 🧠 核心算法原理（MCTS、ResNet、自我对弈）
+- 🚀 训练全流程（手把手教学）
+- 💻 代码走读（逐行讲解）
+- 🎯 实战练习（动手训练）
+
 ## Features
 
 - **AlphaZero Algorithm**: Complete implementation with MCTS and deep neural networks

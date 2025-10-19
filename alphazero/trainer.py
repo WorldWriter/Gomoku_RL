@@ -11,6 +11,11 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from pathlib import Path
 from collections import deque
+import matplotlib
+matplotlib.use('Agg')  # Non-interactive backend
+import matplotlib.pyplot as plt
+import json
+from datetime import datetime
 
 from .self_play import SelfPlay, augment_data
 
@@ -44,7 +49,7 @@ class Trainer:
     Manages the complete training pipeline
     """
 
-    def __init__(self, network, game, args, device):
+    def __init__(self, network, game, args, device, log_dir='logs'):
         """
         Initialize trainer
 
@@ -53,6 +58,7 @@ class Trainer:
             game: Game instance
             args: Training configuration
             device: torch device (CPU/CUDA)
+            log_dir: Directory for logs and visualizations
         """
         self.network = network.to(device)
         self.game = game
@@ -74,6 +80,14 @@ class Trainer:
         self.checkpoint_dir = Path(args.get('checkpoint_dir', 'models'))
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
+        # Create log directory
+        self.log_dir = Path(log_dir)
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+
+        # Training start time
+        self.start_time = datetime.now()
+        self.training_log = []
+
     def train(self, num_iterations):
         """
         Main training loop
@@ -82,6 +96,8 @@ class Trainer:
             num_iterations: Number of training iterations
         """
         for iteration in range(1, num_iterations + 1):
+            iteration_start = datetime.now()
+
             print(f"\n{'='*60}")
             print(f"Iteration {iteration}/{num_iterations}")
             print(f"{'='*60}")
@@ -99,11 +115,27 @@ class Trainer:
             avg_loss = self._train_network()
             self.loss_history.append(avg_loss)
 
-            # Save checkpoint
-            print("\n[3/3] Saving checkpoint...")
-            self._save_checkpoint(iteration)
+            # Record training log
+            iteration_time = (datetime.now() - iteration_start).total_seconds()
+            log_entry = {
+                'iteration': iteration,
+                'loss': avg_loss,
+                'buffer_size': len(self.train_examples_history),
+                'time_seconds': iteration_time,
+                'timestamp': datetime.now().isoformat()
+            }
+            self.training_log.append(log_entry)
 
-            print(f"\nIteration {iteration} completed. Avg Loss: {avg_loss:.4f}")
+            # Save checkpoint and logs
+            print("\n[3/3] Saving checkpoint and logs...")
+            self._save_checkpoint(iteration)
+            self._save_training_log()
+
+            # Plot training curve every 10 iterations or at the end
+            if iteration % 10 == 0 or iteration == num_iterations:
+                self._plot_training_curve(iteration)
+
+            print(f"\nIteration {iteration} completed. Avg Loss: {avg_loss:.4f} | Time: {iteration_time:.1f}s")
 
     def _generate_self_play_data(self):
         """
@@ -220,8 +252,6 @@ class Trainer:
         Args:
             iteration: Current iteration number
         """
-        checkpoint_path = self.checkpoint_dir / f"checkpoint_iter_{iteration}.pth"
-
         checkpoint = {
             'iteration': iteration,
             'model_state_dict': self.network.state_dict(),
@@ -230,12 +260,17 @@ class Trainer:
             'args': self.args,
         }
 
-        torch.save(checkpoint, checkpoint_path)
-        print(f"Checkpoint saved: {checkpoint_path}")
-
-        # Also save as latest
+        # Always save as latest
         latest_path = self.checkpoint_dir / "checkpoint_latest.pth"
         torch.save(checkpoint, latest_path)
+        print(f"Latest checkpoint saved: {latest_path}")
+
+        # Save numbered checkpoint at intervals
+        save_interval = self.args.get('save_interval', 100)
+        if iteration % save_interval == 0:
+            checkpoint_path = self.checkpoint_dir / f"checkpoint_iter_{iteration}.pth"
+            torch.save(checkpoint, checkpoint_path)
+            print(f"Milestone checkpoint saved: {checkpoint_path}")
 
     def load_checkpoint(self, checkpoint_path):
         """
@@ -263,3 +298,126 @@ class Trainer:
         print(f"Resumed from iteration {iteration}")
 
         return iteration
+
+    def _save_training_log(self):
+        """Save training log to JSON file"""
+        log_path = self.log_dir / 'training_log.json'
+        with open(log_path, 'w') as f:
+            json.dump({
+                'start_time': self.start_time.isoformat(),
+                'config': self.args,
+                'training_log': self.training_log,
+                'loss_history': self.loss_history
+            }, f, indent=2)
+
+    def _plot_training_curve(self, current_iteration):
+        """
+        Plot and save training curve
+
+        Args:
+            current_iteration: Current training iteration
+        """
+        if not self.loss_history:
+            return
+
+        plt.figure(figsize=(14, 5))
+
+        # Plot 1: Loss curve
+        plt.subplot(1, 2, 1)
+        iterations = list(range(1, len(self.loss_history) + 1))
+        plt.plot(iterations, self.loss_history, 'b-', linewidth=1.5, alpha=0.7, label='Loss')
+
+        # Add smoothed curve
+        if len(self.loss_history) >= 10:
+            window = min(20, len(self.loss_history) // 5)
+            smoothed = []
+            for i in range(len(self.loss_history)):
+                start = max(0, i - window + 1)
+                smoothed.append(sum(self.loss_history[start:i+1]) / (i - start + 1))
+            plt.plot(iterations, smoothed, 'r-', linewidth=2, label=f'Smoothed (MA-{window})')
+
+        plt.xlabel('Iteration', fontsize=12)
+        plt.ylabel('Loss', fontsize=12)
+        plt.title('Training Loss', fontsize=14, fontweight='bold')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+
+        # Add statistics box
+        stats_text = f"Current: {self.loss_history[-1]:.4f}\n"
+        stats_text += f"Min: {min(self.loss_history):.4f}\n"
+        stats_text += f"Max: {max(self.loss_history):.4f}"
+        plt.text(0.98, 0.97, stats_text, transform=plt.gca().transAxes,
+                 verticalalignment='top', horizontalalignment='right',
+                 bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5),
+                 fontsize=10)
+
+        # Plot 2: Loss reduction
+        plt.subplot(1, 2, 2)
+        if len(self.loss_history) > 1:
+            initial_loss = self.loss_history[0]
+            reduction = [(initial_loss - loss) / initial_loss * 100 for loss in self.loss_history]
+            plt.plot(iterations, reduction, 'g-', linewidth=2)
+            plt.xlabel('Iteration', fontsize=12)
+            plt.ylabel('Loss Reduction (%)', fontsize=12)
+            plt.title('Loss Reduction from Initial', fontsize=14, fontweight='bold')
+            plt.grid(True, alpha=0.3)
+            plt.axhline(y=0, color='k', linestyle='--', alpha=0.3)
+
+        # Overall title
+        board_size = self.args.get('board_size', 'N/A')
+        total_games = current_iteration * self.args.get('num_self_play_games', 0)
+        elapsed = (datetime.now() - self.start_time).total_seconds() / 3600
+
+        plt.suptitle(f'AlphaZero Training Progress - {board_size}x{board_size} Board\n'
+                     f'Iteration: {current_iteration} | Total Games: {total_games} | Time: {elapsed:.1f}h',
+                     fontsize=16, fontweight='bold')
+
+        plt.tight_layout(rect=[0, 0.03, 1, 0.93])
+
+        # Save plot
+        plot_path = self.log_dir / f'training_curve_iter_{current_iteration}.png'
+        plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+        plt.close()
+
+        # Also save as latest
+        latest_plot = self.log_dir / 'training_curve_latest.png'
+        plt.figure(figsize=(14, 5))
+
+        plt.subplot(1, 2, 1)
+        plt.plot(iterations, self.loss_history, 'b-', linewidth=1.5, alpha=0.7, label='Loss')
+        if len(self.loss_history) >= 10:
+            window = min(20, len(self.loss_history) // 5)
+            smoothed = []
+            for i in range(len(self.loss_history)):
+                start = max(0, i - window + 1)
+                smoothed.append(sum(self.loss_history[start:i+1]) / (i - start + 1))
+            plt.plot(iterations, smoothed, 'r-', linewidth=2, label=f'Smoothed (MA-{window})')
+        plt.xlabel('Iteration', fontsize=12)
+        plt.ylabel('Loss', fontsize=12)
+        plt.title('Training Loss', fontsize=14, fontweight='bold')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        stats_text = f"Current: {self.loss_history[-1]:.4f}\nMin: {min(self.loss_history):.4f}\nMax: {max(self.loss_history):.4f}"
+        plt.text(0.98, 0.97, stats_text, transform=plt.gca().transAxes,
+                 verticalalignment='top', horizontalalignment='right',
+                 bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5), fontsize=10)
+
+        plt.subplot(1, 2, 2)
+        if len(self.loss_history) > 1:
+            initial_loss = self.loss_history[0]
+            reduction = [(initial_loss - loss) / initial_loss * 100 for loss in self.loss_history]
+            plt.plot(iterations, reduction, 'g-', linewidth=2)
+            plt.xlabel('Iteration', fontsize=12)
+            plt.ylabel('Loss Reduction (%)', fontsize=12)
+            plt.title('Loss Reduction from Initial', fontsize=14, fontweight='bold')
+            plt.grid(True, alpha=0.3)
+            plt.axhline(y=0, color='k', linestyle='--', alpha=0.3)
+
+        plt.suptitle(f'AlphaZero Training Progress - {board_size}x{board_size} Board\n'
+                     f'Iteration: {current_iteration} | Total Games: {total_games} | Time: {elapsed:.1f}h',
+                     fontsize=16, fontweight='bold')
+        plt.tight_layout(rect=[0, 0.03, 1, 0.93])
+        plt.savefig(latest_plot, dpi=150, bbox_inches='tight')
+        plt.close()
+
+        print(f"Training curve saved: {plot_path}")

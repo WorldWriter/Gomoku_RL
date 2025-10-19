@@ -78,6 +78,13 @@ def play_game(player1, player2, game, verbose=False):
         int: Game result (1: player1 wins, -1: player2 wins, 0: draw)
     """
     game.reset()
+
+    # Reset MCTS trees at the start of each game
+    if isinstance(player1, AlphaZeroPlayer):
+        player1.mcts.reset()
+    if isinstance(player2, AlphaZeroPlayer):
+        player2.mcts.reset()
+
     current_player = player1
     other_player = player2
 
@@ -95,7 +102,9 @@ def play_game(player1, player2, game, verbose=False):
         game.get_next_state(action)
         move_count += 1
 
-        # Update MCTS tree if applicable
+        # Update MCTS trees for both players
+        if isinstance(current_player, AlphaZeroPlayer):
+            current_player.mcts.update_root(action)
         if isinstance(other_player, AlphaZeroPlayer):
             other_player.mcts.update_root(action)
 
