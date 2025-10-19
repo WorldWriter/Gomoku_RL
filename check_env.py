@@ -5,6 +5,8 @@ Run this before training to verify your environment
 """
 
 import sys
+# 添加E盘PyTorch安装路径
+sys.path.insert(0, 'E:\\pytorch_install\\Lib\\site-packages')
 import torch
 import numpy as np
 from utils.device import print_device_info, get_device

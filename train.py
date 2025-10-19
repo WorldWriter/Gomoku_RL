@@ -3,8 +3,11 @@ Main training script for AlphaZero Gomoku
 Supports multiple board sizes: 5x5, 10x10, 15x15
 """
 
-import argparse
+import sys
+# 添加E盘PyTorch安装路径
+sys.path.insert(0, 'E:\\pytorch_install\\Lib\\site-packages')
 import importlib
+import argparse
 from pathlib import Path
 
 from gomoku import GomokuGame

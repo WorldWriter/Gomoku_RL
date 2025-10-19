@@ -3,8 +3,11 @@ Human vs AI gameplay interface
 Play Gomoku against trained AlphaZero agent
 """
 
-import argparse
+import sys
+# 添加E盘PyTorch安装路径
+sys.path.insert(0, 'E:\\pytorch_install\\Lib\\site-packages')
 import torch
+import argparse
 import numpy as np
 from pathlib import Path
 

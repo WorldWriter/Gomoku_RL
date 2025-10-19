@@ -30,9 +30,10 @@ class TrainingDataset(Dataset):
 
     def __getitem__(self, idx):
         state, policy, value = self.examples[idx]
+        # 添加.copy()以解决负步长问题
         return (
-            torch.FloatTensor(state),
-            torch.FloatTensor(policy),
+            torch.FloatTensor(state.copy()),
+            torch.FloatTensor(policy.copy() if isinstance(policy, np.ndarray) else policy),
             torch.FloatTensor([value])
         )
 
