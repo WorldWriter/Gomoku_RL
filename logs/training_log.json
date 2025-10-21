@@ -1,0 +1,34 @@
+{
+  "start_time": "2025-10-21T16:53:01.551941",
+  "config": {
+    "board_size": 5,
+    "n_in_row": 4,
+    "num_channels": 64,
+    "num_res_blocks": 4,
+    "num_simulations": 200,
+    "c_puct": 1.0,
+    "num_self_play_games": 50,
+    "temperature_threshold": 15,
+    "num_iterations": 50,
+    "batch_size": 32,
+    "num_epochs": 5,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "max_history_len": 50000,
+    "use_augmentation": true,
+    "checkpoint_dir": "models/5x5",
+    "save_interval": 1000
+  },
+  "training_log": [
+    {
+      "iteration": 1,
+      "loss": 3.004514067395748,
+      "buffer_size": 9248,
+      "time_seconds": 208.324965,
+      "timestamp": "2025-10-21T16:56:29.877907"
+    }
+  ],
+  "loss_history": [
+    3.004514067395748
+  ]
+}
