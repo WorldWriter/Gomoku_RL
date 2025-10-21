@@ -1,0 +1,27 @@
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO - Logger initialized. Log file: logs\AlphaZero_10x10_20251017_104705.log
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO - Loading configuration for 10x10 board...
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO - Using device: cuda
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO - Initializing game...
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO - Creating neural network...
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO - Network architecture:
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO -   Board size: 10x10
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO -   Channels: 128
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO -   Residual blocks: 8
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO -   Total parameters: 2,413,707
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO - Initializing trainer...
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO - 
+Training configuration:
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO -   Total iterations: 200
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO -   Self-play games per iteration: 100
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO -   MCTS simulations: 400
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO -   Batch size: 64
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO -   Learning rate: 0.001
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO -   Checkpoint directory: models/10x10
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO - 
+============================================================
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO - Starting training...
+2025-10-17 10:47:05 - AlphaZero_10x10 - INFO - ============================================================
+2025-10-19 14:51:05 - AlphaZero_10x10 - INFO - 
+Training interrupted by user
+2025-10-19 14:51:05 - AlphaZero_10x10 - INFO - Saving checkpoint...
+2025-10-19 14:51:05 - AlphaZero_10x10 - INFO - Checkpoint saved. You can resume training with --resume flag

@@ -1,0 +1,48 @@
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO - Logger initialized. Log file: logs\AlphaZero_5x5_20251016_162429.log
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO - Loading configuration for 5x5 board...
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO - Using device: cuda
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO - Initializing game...
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO - Creating neural network...
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO - Network architecture:
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO -   Board size: 5x5
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO -   Channels: 64
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO -   Residual blocks: 4
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO -   Total parameters: 306,178
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO - Initializing trainer...
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO - 
+Training configuration:
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO -   Total iterations: 100
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO -   Self-play games per iteration: 50
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO -   MCTS simulations: 200
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO -   Batch size: 32
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO -   Learning rate: 0.001
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO -   Checkpoint directory: models/5x5
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO - 
+============================================================
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO - Starting training...
+2025-10-16 16:24:29 - AlphaZero_5x5 - INFO - ============================================================
+2025-10-16 16:28:11 - AlphaZero_5x5 - ERROR - 
+Training failed with error: At least one stride in the given numpy array is negative, and tensors with negative strides are not currently supported. (You can probably work around this by making a copy of your array  with array.copy().) 
+2025-10-16 16:28:11 - AlphaZero_5x5 - ERROR - Traceback (most recent call last):
+  File "E:\ANUS_learning\Gomoku_RL\train.py", line 115, in main
+    trainer.train(remaining_iterations)
+  File "E:\ANUS_learning\Gomoku_RL\alphazero\trainer.py", line 98, in train
+    avg_loss = self._train_network()
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "E:\ANUS_learning\Gomoku_RL\alphazero\trainer.py", line 156, in _train_network
+    for states, target_policies, target_values in dataloader:
+                                                  ^^^^^^^^^^
+  File "E:\pytorch_install\Lib\site-packages\torch\utils\data\dataloader.py", line 631, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "E:\pytorch_install\Lib\site-packages\torch\utils\data\dataloader.py", line 675, in _next_data
+    data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\pytorch_install\Lib\site-packages\torch\utils\data\_utils\fetch.py", line 51, in fetch
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+            ~~~~~~~~~~~~^^^^^
+  File "E:\ANUS_learning\Gomoku_RL\alphazero\trainer.py", line 34, in __getitem__
+    torch.FloatTensor(state),
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: At least one stride in the given numpy array is negative, and tensors with negative strides are not currently supported. (You can probably work around this by making a copy of your array  with array.copy().) 
+

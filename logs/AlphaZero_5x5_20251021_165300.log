@@ -1,0 +1,24 @@
+2025-10-21 16:53:00 - AlphaZero_5x5 - INFO - Logger initialized. Log file: logs\AlphaZero_5x5_20251021_165300.log
+2025-10-21 16:53:00 - AlphaZero_5x5 - INFO - Loading configuration for 5x5 board...
+2025-10-21 16:53:00 - AlphaZero_5x5 - INFO - Overriding iterations to 50
+2025-10-21 16:53:00 - AlphaZero_5x5 - INFO - Using device: cuda
+2025-10-21 16:53:00 - AlphaZero_5x5 - INFO - Initializing game...
+2025-10-21 16:53:00 - AlphaZero_5x5 - INFO - Creating neural network...
+2025-10-21 16:53:00 - AlphaZero_5x5 - INFO - Network architecture:
+2025-10-21 16:53:00 - AlphaZero_5x5 - INFO -   Board size: 5x5
+2025-10-21 16:53:00 - AlphaZero_5x5 - INFO -   Channels: 64
+2025-10-21 16:53:00 - AlphaZero_5x5 - INFO -   Residual blocks: 4
+2025-10-21 16:53:00 - AlphaZero_5x5 - INFO -   Total parameters: 306,178
+2025-10-21 16:53:00 - AlphaZero_5x5 - INFO - Initializing trainer...
+2025-10-21 16:53:01 - AlphaZero_5x5 - INFO - 
+Training configuration:
+2025-10-21 16:53:01 - AlphaZero_5x5 - INFO -   Total iterations: 50
+2025-10-21 16:53:01 - AlphaZero_5x5 - INFO -   Self-play games per iteration: 50
+2025-10-21 16:53:01 - AlphaZero_5x5 - INFO -   MCTS simulations: 200
+2025-10-21 16:53:01 - AlphaZero_5x5 - INFO -   Batch size: 32
+2025-10-21 16:53:01 - AlphaZero_5x5 - INFO -   Learning rate: 0.001
+2025-10-21 16:53:01 - AlphaZero_5x5 - INFO -   Checkpoint directory: models/5x5
+2025-10-21 16:53:01 - AlphaZero_5x5 - INFO - 
+============================================================
+2025-10-21 16:53:01 - AlphaZero_5x5 - INFO - Starting training...
+2025-10-21 16:53:01 - AlphaZero_5x5 - INFO - ============================================================
