@@ -123,10 +123,11 @@ class MCTS:
             numpy.ndarray: Action probability distribution
         """
         # Run simulations
-        for _ in range(self.args['num_simulations']):
+        for i in range(self.args['num_simulations']):
             # Clone game for simulation
             game_copy = game.clone()
-            self._simulate(game_copy)
+            # Add Dirichlet noise only on first simulation when initializing root
+            self._simulate(game_copy, add_dirichlet_noise=(add_dirichlet_noise and i == 0))
 
         # Get visit counts for all actions
         action_visits = np.zeros(game.get_action_size())
@@ -145,12 +146,13 @@ class MCTS:
 
         return action_probs
 
-    def _simulate(self, game):
+    def _simulate(self, game, add_dirichlet_noise=False):
         """
         Run one MCTS simulation
 
         Args:
             game: Game state to simulate from
+            add_dirichlet_noise: Whether to add Dirichlet noise to root node
 
         Returns:
             float: Value from current player's perspective
@@ -172,6 +174,24 @@ class MCTS:
             else:
                 # If all valid moves have zero probability, use uniform distribution
                 policy = valid_moves / np.sum(valid_moves)
+
+            # Add Dirichlet noise for exploration (during self-play)
+            if add_dirichlet_noise:
+                alpha = self.args.get('dirichlet_alpha', 0.3)
+                epsilon = self.args.get('dirichlet_epsilon', 0.25)
+
+                # Generate Dirichlet noise
+                valid_actions = [a for a in range(len(policy)) if valid_moves[a] > 0]
+                noise = np.random.dirichlet([alpha] * len(valid_actions))
+
+                # Mix policy with noise: P_new = (1-ε)*P + ε*noise
+                for i, action in enumerate(valid_actions):
+                    policy[action] = (1 - epsilon) * policy[action] + epsilon * noise[i]
+
+                # Renormalize
+                policy_sum = np.sum(policy)
+                if policy_sum > 0:
+                    policy = policy / policy_sum
 
             action_priors = {a: policy[a] for a in range(len(policy)) if valid_moves[a] > 0}
             self.root = MCTSNode(0)

@@ -234,7 +234,7 @@ python train.py --board_size 15 --iterations 500
 - [AlphaGo Zero 论文](https://www.nature.com/articles/nature24270)
 - [AlphaZero 论文](https://arxiv.org/abs/1712.01815)
 - [MCTS 综述](https://ieeexplore.ieee.org/document/6145622)
-
+- [AlphaZero 五子棋](https://arxiv.org/abs/2309.01294?utm_source=chatgpt.com)
 ## 许可证
 
 MIT 许可证 - 可自由将此项目用于学习和实验。

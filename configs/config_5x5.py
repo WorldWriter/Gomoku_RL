@@ -12,12 +12,16 @@ NUM_CHANNELS = 64
 NUM_RES_BLOCKS = 4
 
 # MCTS settings
-NUM_SIMULATIONS = 200  # Reduced for faster training
-C_PUCT = 1.0  # Exploration constant
+NUM_SIMULATIONS = 800  # Increased for better search quality
+C_PUCT = 2.0  # Exploration constant (increased for more exploration)
 
 # Self-play settings
 NUM_SELF_PLAY_GAMES = 50  # Games per iteration
-TEMPERATURE_THRESHOLD = 15  # Use temperature=1 for first N moves
+TEMPERATURE_THRESHOLD = 8  # Use temperature=1 for first N moves (adjusted for 5x5 board)
+
+# Dirichlet noise settings (for exploration at root)
+DIRICHLET_ALPHA = 0.3  # Dirichlet alpha parameter
+DIRICHLET_EPSILON = 0.25  # Mixing ratio for Dirichlet noise
 
 # Training settings
 NUM_ITERATIONS = 100
@@ -53,6 +57,8 @@ def get_config():
         # Self-play
         'num_self_play_games': NUM_SELF_PLAY_GAMES,
         'temperature_threshold': TEMPERATURE_THRESHOLD,
+        'dirichlet_alpha': DIRICHLET_ALPHA,
+        'dirichlet_epsilon': DIRICHLET_EPSILON,
 
         # Training
         'num_iterations': NUM_ITERATIONS,

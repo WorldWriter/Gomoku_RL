@@ -54,7 +54,9 @@ class SelfPlay:
             canonical_board = game.get_canonical_board()
 
             # Get MCTS policy
-            action_probs = mcts.get_action_probs(game, temperature=temperature)
+            # Add Dirichlet noise only on the first move for exploration
+            add_noise = (move_count == 1)
+            action_probs = mcts.get_action_probs(game, temperature=temperature, add_dirichlet_noise=add_noise)
 
             # Store training example
             # Note: we store the canonical board and policy

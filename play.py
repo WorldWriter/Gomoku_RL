@@ -152,7 +152,10 @@ def play_game(human_player, ai_player, game, human_first=True):
         game.get_next_state(action)
         move_count += 1
 
-        # Update MCTS tree for AI
+        # Update MCTS tree for AI (update the player who just made the move)
+        if isinstance(current_player, AIPlayer):
+            current_player.mcts.update_root(action)
+        # Also update the opponent's MCTS tree
         if isinstance(other_player, AIPlayer):
             other_player.mcts.update_root(action)
 
